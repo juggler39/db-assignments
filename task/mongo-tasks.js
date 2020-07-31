@@ -56,7 +56,34 @@ async function task_1_1(db) {
  *  - Round all values to MAX 3 decimal places
  */
 async function task_1_2(db) {
-    throw new Error("Not implemented");
+  const result = await db
+    .collection('order-details')
+    .aggregate([
+      {
+        $group: {
+          _id: '$OrderID',
+          TotalPrice: { $sum: { $multiply: ['$UnitPrice', '$Quantity'] } },
+          TotalDiscount: {
+            $sum: { $multiply: [100, '$Discount', '$Quantity'] },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          'Order Id': '$_id',
+          'Order Total Price': { $round: ['$TotalPrice', 3] },
+          'Total Order Discount, %': {
+            $round: [{ $divide: ['$TotalDiscount', '$TotalPrice'] }, 3],
+          },
+        },
+      },
+      {
+        $sort: { 'Order Id': -1 },
+      },
+    ])
+    .toArray();
+  return result;
 }
 
 /**
