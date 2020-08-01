@@ -56,9 +56,7 @@ async function task_1_1(db) {
  *  - Round all values to MAX 3 decimal places
  */
 async function task_1_2(db) {
-  const result = await db
-    .collection('order-details')
-    .aggregate([
+  const result = await db.collection('order-details').aggregate([
       {
         $group: {
           _id: '$OrderID',
@@ -93,7 +91,17 @@ async function task_1_2(db) {
  * HINT: check by string "NULL" values
  */
 async function task_1_3(db) {
-    throw new Error("Not implemented");
+  const result = await db
+    .collection('customers')
+    .find(
+    { Fax: 'NULL' },
+        {
+            projection: { _id: 0, CustomerID: 1, CompanyName: 1 },
+            sort: { CustomerID: 1 },
+        }
+    )
+    .toArray();
+  return result;
 }
 
 /**
@@ -107,7 +115,43 @@ async function task_1_3(db) {
  *
  */
 async function task_1_4(db) {
-    throw new Error("Not implemented");
+    const TotalOrdersAmount = await db.collection('orders').countDocuments();
+      const result = await db
+        .collection('orders')
+        .aggregate([
+          {
+            $group: {
+              _id: '$CustomerID',
+              customerOrders: {
+                $sum: 1,
+              },
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              'Customer Id': '$_id',
+              'Total number of Orders': '$customerOrders',
+              '% of all orders': {
+                $round: [
+                  {
+                    $multiply: ['$customerOrders', 1 / TotalOrdersAmount, 100],
+                  },
+                  3,
+                ],
+              },
+            },
+          },
+          {
+            $sort: {
+              '% of all orders': -1,
+              'Customer Id': 1,
+            },
+          },
+        ])
+        .toArray();
+      return result;
+
 }
 
 /**
