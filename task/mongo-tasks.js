@@ -56,30 +56,32 @@ async function task_1_1(db) {
  *  - Round all values to MAX 3 decimal places
  */
 async function task_1_2(db) {
-  const result = await db.collection('order-details').aggregate([
-      {
-        $group: {
-          _id: '$OrderID',
-          TotalPrice: { $sum: { $multiply: ['$UnitPrice', '$Quantity'] } },
-          TotalDiscount: {
-            $sum: { $multiply: [100, '$Discount', '$Quantity'] },
+  const result = await db
+    .collection('order-details')
+    .aggregate([
+        {
+          $group: {
+            _id: '$OrderID',
+            TotalPrice: { $sum: { $multiply: ['$UnitPrice', '$Quantity'] } },
+            TotalDiscount: {
+              $sum: { $multiply: [100, '$Discount', '$Quantity'] },
+            },
           },
         },
-      },
-      {
-        $project: {
-          _id: 0,
-          'Order Id': '$_id',
-          'Order Total Price': { $round: ['$TotalPrice', 3] },
-          'Total Order Discount, %': {
-            $round: [{ $divide: ['$TotalDiscount', '$TotalPrice'] }, 3],
+        {
+          $project: {
+            _id: 0,
+            'Order Id': '$_id',
+            'Order Total Price': { $round: ['$TotalPrice', 3] },
+            'Total Order Discount, %': {
+              $round: [{ $divide: ['$TotalDiscount', '$TotalPrice'] }, 3],
+            },
           },
         },
-      },
-      {
-        $sort: { 'Order Id': -1 },
-      },
-    ])
+        {
+          $sort: { 'Order Id': -1 },
+        },
+      ])
     .toArray();
   return result;
 }
@@ -246,7 +248,48 @@ async function task_1_6(db) {
  * Reports To - Full name. If the employee does not report to anybody leave "-" in the column.
  */
 async function task_1_7(db) {
-    throw new Error("Not implemented");
+  const result = await db
+    .collection('employees')
+    .aggregate([
+      {
+        $lookup: {
+          from: 'employees',
+          localField: 'ReportsTo',
+          foreignField: 'EmployeeID',
+          as: 'Chief',
+        },
+      },
+      {
+        $unwind: {
+          path: '$Chief',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          EmployeeID: 1,
+          FullName: {
+            $concat: ['$TitleOfCourtesy', '$FirstName', ' ', '$LastName'],
+          },
+          ReportsTo: {
+            $ifNull: [
+              {
+                $concat: ['$Chief.FirstName', ' ', '$Chief.LastName'],
+              },
+              '-',
+            ],
+          },
+        },
+      },
+      {
+        $sort: {
+          EmployeeID: 1,
+        },
+      },
+    ])
+    .toArray();
+  return result;
 }
 
 /**

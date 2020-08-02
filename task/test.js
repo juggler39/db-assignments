@@ -10,9 +10,41 @@ mongo.connect(url, function (err, client) {
   collection
     .aggregate([
       {
-      $count: 'myCount',
-      $project: { _id: 0,  CustomerID: 1 }
-    }
+        $lookup: {
+          from: 'employees',
+          localField: 'ReportsTo',
+          foreignField: 'EmployeeID',
+          as: 'Chief',
+        },
+      },
+      {
+        $unwind: {
+          path: '$Chief',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          EmployeeID: 1,
+          FullName: {
+            $concat: ['$TitleOfCourtesy', '$FirstName', ' ', '$LastName'],
+          },
+          ReportsTo: {
+            $ifNull: [
+              {
+                $concat: ['$Chief.FirstName', ' ', '$Chief.LastName'],
+              },
+              '-',
+            ],
+          },
+        },
+      },
+      {
+        $sort: {
+          EmployeeID: 1,
+        },
+      },
     ])
 
     .toArray(function (err, documents) {
