@@ -115,42 +115,42 @@ async function task_1_3(db) {
  *
  */
 async function task_1_4(db) {
-    const TotalOrdersAmount = await db.collection('orders').countDocuments();
-      const result = await db
-        .collection('orders')
-        .aggregate([
-          {
-            $group: {
-              _id: '$CustomerID',
-              customerOrders: {
-                $sum: 1,
+  const TotalOrdersAmount = await db.collection('orders').countDocuments();
+  const result = await db
+    .collection('orders')
+    .aggregate([
+      {
+        $group: {
+          _id: '$CustomerID',
+          customerOrders: {
+            $sum: 1,
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          'Customer Id': '$_id',
+          'Total number of Orders': '$customerOrders',
+          '% of all orders': {
+            $round: [
+              {
+                $multiply: ['$customerOrders', 1 / TotalOrdersAmount, 100],
               },
-            },
+              3,
+            ],
           },
-          {
-            $project: {
-              _id: 0,
-              'Customer Id': '$_id',
-              'Total number of Orders': '$customerOrders',
-              '% of all orders': {
-                $round: [
-                  {
-                    $multiply: ['$customerOrders', 1 / TotalOrdersAmount, 100],
-                  },
-                  3,
-                ],
-              },
-            },
-          },
-          {
-            $sort: {
-              '% of all orders': -1,
-              'Customer Id': 1,
-            },
-          },
-        ])
-        .toArray();
-      return result;
+        },
+      },
+      {
+        $sort: {
+          '% of all orders': -1,
+          'Customer Id': 1,
+        },
+      },
+    ])
+    .toArray();
+  return result;
 
 }
 
@@ -159,22 +159,22 @@ async function task_1_4(db) {
  * | ProductID | ProductName | QuantityPerUnit |
  */
 async function task_1_5(db) {
-      const result = await db
-        .collection('products')
-        .find(
-          { ProductName: { $regex: /^[a-f].*/i } },
-          {
-            projection: {
-              _id: 0,
-              ProductName: 1,
-              ProductID: 1,
-              QuantityPerUnit: 1,
-            },
-            sort: { ProductName: 1 },
-          }
-        )
-        .toArray();
-      return result;
+  const result = await db
+    .collection('products')
+    .find(
+      { ProductName: { $regex: /^[a-f].*/i } },
+      {
+        projection: {
+          _id: 0,
+          ProductName: 1,
+          ProductID: 1,
+          QuantityPerUnit: 1,
+        },
+        sort: { ProductName: 1 },
+      }
+    )
+    .toArray();
+  return result;
 }
 
 /**
@@ -188,7 +188,52 @@ async function task_1_5(db) {
  *       https://docs.mongodb.com/manual/reference/operator/aggregation/lookup/
  */
 async function task_1_6(db) {
-    throw new Error("Not implemented");
+  const result = await db
+    .collection('products')
+    .aggregate([
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'CategoryID',
+          foreignField: 'CategoryID',
+          as: 'Categories',
+        },
+      },
+      {
+        $lookup: {
+          from: 'suppliers',
+          localField: 'SupplierID',
+          foreignField: 'SupplierID',
+          as: 'Suppliers',
+        },
+      },
+      {
+        $unwind: {
+          path: '$Categories',
+        },
+      },
+      {
+        $unwind: {
+          path: '$Suppliers',
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          ProductName: 1,
+          CategoryName: '$Categories.CategoryName',
+          SupplierCompanyName: '$Suppliers.CompanyName',
+        },
+      },
+      {
+        $sort: {
+          ProductName: 1,
+          CategoryName: 1,
+        },
+      },
+    ])
+    .toArray();
+  return result;
 }
 
 /**
