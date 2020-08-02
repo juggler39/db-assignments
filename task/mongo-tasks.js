@@ -159,7 +159,22 @@ async function task_1_4(db) {
  * | ProductID | ProductName | QuantityPerUnit |
  */
 async function task_1_5(db) {
-    throw new Error("Not implemented");
+      const result = await db
+        .collection('products')
+        .find(
+          { ProductName: { $regex: /^[a-f].*/i } },
+          {
+            projection: {
+              _id: 0,
+              ProductName: 1,
+              ProductID: 1,
+              QuantityPerUnit: 1,
+            },
+            sort: { ProductName: 1 },
+          }
+        )
+        .toArray();
+      return result;
 }
 
 /**
