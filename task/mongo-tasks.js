@@ -705,7 +705,56 @@ async function task_1_16(db) {
  *  - Round AvgPrice to MAX 2 decimal places
  */
 async function task_1_17(db) {
-    throw new Error("Not implemented");
+  const result = await db
+    .collection('products')
+    .aggregate([
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'CategoryID',
+          foreignField: 'CategoryID',
+          as: 'categories',
+        },
+      },
+      {
+        $unwind: {
+          path: '$categories',
+        },
+      },
+      {
+        $group: {
+          _id: '$categories.CategoryName',
+          unitsPrice: {
+            $sum: '$UnitPrice',
+          },
+          units: {
+            $sum: 1,
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          CategoryName: '$_id',
+          AvgPrice: {
+            $round: [
+              {
+                $divide: ['$unitsPrice', '$units'],
+              },
+              2,
+            ],
+          },
+        },
+      },
+      {
+        $sort: {
+          AvgPrice: -1,
+          CategoryName: 1
+        },
+      },
+    ])
+    .toArray();
+  return result;
 }
 
 /**
