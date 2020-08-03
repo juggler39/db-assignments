@@ -299,7 +299,34 @@ async function task_1_7(db) {
  * Order by CategoryName
  */
 async function task_1_8(db) {
-    throw new Error("Not implemented");
+const result = await db
+  .collection('categories')
+  .aggregate([
+    {
+      $lookup: {
+        from: 'products',
+        localField: 'CategoryID',
+        foreignField: 'CategoryID',
+        as: 'Categories',
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        CategoryName: 1,
+        TotalNumberOfProducts: {
+          $size: '$Categories',
+        },
+      },
+    },
+    {
+      $sort: {
+        CategoryName: 1,
+      },
+    },
+  ])
+  .toArray();
+return result;
 }
 
 /**
