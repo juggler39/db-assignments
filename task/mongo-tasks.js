@@ -464,7 +464,32 @@ async function task_1_13(db) {
  *       https://docs.mongodb.com/manual/reference/operator/query/expr/#op._S_expr
  */
 async function task_1_14(db) {
-    throw new Error("Not implemented");
+  const result = await db
+    .collection('products')
+    .aggregate([
+      {
+        $match: {
+          $expr: {
+            $lt: ['$UnitsInStock', '$UnitsOnOrder'],
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          ProductName: 1,
+          UnitsOnOrder: 1,
+          UnitsInStock: 1,
+        },
+      },
+      {
+        $sort: {
+          ProductName: 1,
+        },
+      },
+    ])
+    .toArray();
+  return result;
 }
 
 /**
