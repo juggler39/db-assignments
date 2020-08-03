@@ -528,7 +528,7 @@ async function task_1_15(db) {
       },
       {
         $group: {
-          _id: null,
+          _id: '',
           January: {
             $sum: {
               $cond: [
@@ -679,7 +679,22 @@ async function task_1_15(db) {
  * Order by OrderID
  */
 async function task_1_16(db) {
-    throw new Error("Not implemented");
+    const result = await db
+      .collection('orders')
+      .find(
+        { ShipPostalCode: { $exists: true } },
+        {
+          projection: {
+            _id: 0,
+            OrderID: 1,
+            CustomerID: 1,
+            ShipCountry: 1,
+          },
+          sort: { OrderID: 1 },
+        }
+      )
+      .toArray();
+    return result;
 }
 
 /**
