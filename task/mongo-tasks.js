@@ -336,7 +336,21 @@ return result;
  * order by CustomerID
  */
 async function task_1_9(db) {
-    throw new Error("Not implemented");
+  const result = await db
+    .collection('customers')
+    .find(
+      { ContactName: { $regex: /^F..n/ } },
+      {
+        projection: {
+          _id: 0,
+          CustomerID: 1,
+          ContactName: 1,
+        },
+        sort: { CustomerID: 1 },
+      }
+    )
+    .toArray();
+  return result;
 }
 
 /**
