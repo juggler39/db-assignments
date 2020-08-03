@@ -500,7 +500,177 @@ async function task_1_14(db) {
  *       https://docs.mongodb.com/manual/reference/operator/aggregation/dateFromString/
  */
 async function task_1_15(db) {
-    throw new Error("Not implemented");
+  const result = await db
+    .collection('orders')
+    .aggregate([
+      {
+        $match: {
+          $expr: {
+            $eq: [
+              {
+                $year: {
+                  $toDate: '$OrderDate',
+                },
+              },
+              1997,
+            ],
+          },
+        },
+      },
+      {
+        $project: {
+          month: {
+            $month: {
+              $toDate: '$OrderDate',
+            },
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          January: {
+            $sum: {
+              $cond: [
+                {
+                  $eq: ['$month', 1],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+          February: {
+            $sum: {
+              $cond: [
+                {
+                  $eq: ['$month', 2],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+          March: {
+            $sum: {
+              $cond: [
+                {
+                  $eq: ['$month', 3],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+          April: {
+            $sum: {
+              $cond: [
+                {
+                  $eq: ['$month', 4],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+          May: {
+            $sum: {
+              $cond: [
+                {
+                  $eq: ['$month', 5],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+          June: {
+            $sum: {
+              $cond: [
+                {
+                  $eq: ['$month', 6],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+          July: {
+            $sum: {
+              $cond: [
+                {
+                  $eq: ['$month', 7],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+          August: {
+            $sum: {
+              $cond: [
+                {
+                  $eq: ['$month', 8],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+          September: {
+            $sum: {
+              $cond: [
+                {
+                  $eq: ['$month', 9],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+          October: {
+            $sum: {
+              $cond: [
+                {
+                  $eq: ['$month', 10],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+          November: {
+            $sum: {
+              $cond: [
+                {
+                  $eq: ['$month', 11],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+          December: {
+            $sum: {
+              $cond: [
+                {
+                  $eq: ['$month', 12],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+        },
+      },
+    ])
+    .next();
+  return result;
 }
 
 /**
