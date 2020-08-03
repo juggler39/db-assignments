@@ -6,46 +6,24 @@ mongo.connect(url, function (err, client) {
   if (err) {
     throw err;
   }
-  var collection = client.db('northwind').collection('orders');
+  var collection = client.db('northwind').collection('products');
   collection
-    .aggregate([
+    .find(
       {
-        $lookup: {
-          from: 'employees',
-          localField: 'ReportsTo',
-          foreignField: 'EmployeeID',
-          as: 'Chief',
-        },
+
+        limit: 20,
       },
-      {
-        $unwind: {
-          path: '$Chief',
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          EmployeeID: 1,
-          FullName: {
-            $concat: ['$TitleOfCourtesy', '$FirstName', ' ', '$LastName'],
-          },
-          ReportsTo: {
-            $ifNull: [
-              {
-                $concat: ['$Chief.FirstName', ' ', '$Chief.LastName'],
-              },
-              '-',
-            ],
-          },
-        },
-      },
-      {
-        $sort: {
-          EmployeeID: 1,
-        },
-      },
-    ])
+      // {
+      //   projection: {
+      //     _id: 0,
+      //     ProductName: 1,
+      //     UnitPrice: 1,
+      //   },
+      //   sort: {
+      //     UnitPrice: 1,
+      //   },
+      // }
+    )
 
     .toArray(function (err, documents) {
       console.log(documents);
