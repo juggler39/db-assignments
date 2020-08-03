@@ -383,7 +383,23 @@ async function task_1_10(db) {
  * Order by UnitPrice then by ProductName
  */
 async function task_1_11(db) {
-    throw new Error("Not implemented");
+  const result = await db
+    .collection('products')
+    .find(
+      { UnitPrice: { $gte: 5, $lte: 15 } },
+      {
+        projection: {
+          _id: 0,
+          ProductName: 1,
+          UnitPrice: 1,
+        },
+        sort: { 
+          UnitPrice: 1,
+          ProductName: 1 },
+      }
+    )
+    .toArray();
+  return result;
 }
 
 /**
