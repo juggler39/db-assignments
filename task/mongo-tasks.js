@@ -444,7 +444,15 @@ return result;
  * HINT: That's acceptable to make it in 2 queries
  */
 async function task_1_13(db) {
-    throw new Error("Not implemented");
+  const result = {
+    TotalOfCurrentProducts: await db
+      .collection('products')
+      .countDocuments(),
+    TotalOfDiscontinuedProducts: await db
+      .collection('products')
+      .countDocuments({ Discontinued: 1 }),
+  };
+  return result;
 }
 
 /**
