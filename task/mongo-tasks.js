@@ -1003,7 +1003,39 @@ async function task_1_20(db) {
  * | OrderID | Maximum Purchase Amount, $ |
  */
 async function task_1_21(db) {
-    throw new Error("Not implemented");
+  const result = await db
+    .collection('order-details')
+    .aggregate([
+      {
+        $group: {
+          _id: '$OrderID',
+          OrderPrice: {
+            $sum: {
+              $multiply: ['$UnitPrice', '$Quantity'],
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          OrderID: '$_id',
+          'Maximum Purchase Amount, $': {
+            $round: ['$OrderPrice', 2],
+          },
+        },
+      },
+      {
+        $sort: {
+          'Maximum Purchase Amount, $': -1,
+        },
+      },
+      {
+        $limit: 1,
+      },
+    ])
+    .toArray();
+  return result;
 }
 
 /**
