@@ -834,7 +834,92 @@ async function task_1_18(db) {
  *       - do not hesitate to "ensureIndex" in "before" function at the top if needed https://docs.mongodb.com/manual/reference/method/db.collection.ensureIndex/
  */
 async function task_1_19(db) {
-    throw new Error("Not implemented");
+  const result = await db
+    .collection('order-details')
+    .aggregate([
+      {
+        $group: {
+          _id: '$OrderID',
+          OrderPrice: {
+            $sum: {
+              $multiply: ['$UnitPrice', '$Quantity'],
+            },
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: 'orders',
+          localField: '_id',
+          foreignField: 'OrderID',
+          as: 'orders',
+        },
+      },
+      {
+        $unwind: {
+          path: '$orders',
+        },
+      },
+      {
+        $lookup: {
+          from: 'customers',
+          localField: 'orders.CustomerID',
+          foreignField: 'CustomerID',
+          as: 'orders',
+        },
+      },
+      {
+        $unwind: {
+          path: '$orders',
+        },
+      },
+      {
+        $group: {
+          _id: '$orders.CustomerID',
+          'TotalOrdersAmount, $': {
+            $sum: '$OrderPrice',
+          },
+        },
+      },
+      {
+        $match: {
+          'TotalOrdersAmount, $': {
+            $gt: 10000,
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: 'customers',
+          localField: '_id',
+          foreignField: 'CustomerID',
+          as: 'orders',
+        },
+      },
+      {
+        $unwind: {
+          path: '$orders',
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          CustomerID: '$_id',
+          CompanyName: '$orders.CompanyName',
+          'TotalOrdersAmount, $': {
+            $round: ['$TotalOrdersAmount, $', 2],
+          },
+        },
+      },
+      {
+        $sort: {
+          'TotalOrdersAmount, $': -1,
+          CustomerID: 1,
+        },
+      },
+    ])
+    .toArray();
+  return result;
 }
 
 /**
@@ -843,7 +928,74 @@ async function task_1_19(db) {
  * | EmployeeID | Employee Full Name | Amount, $ |
  */
 async function task_1_20(db) {
-    throw new Error("Not implemented");
+  const result = await db
+    .collection('order-details')
+    .aggregate([
+      {
+        $group: {
+          _id: '$OrderID',
+          OrderPrice: {
+            $sum: {
+              $multiply: ['$UnitPrice', '$Quantity'],
+            },
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: 'orders',
+          localField: '_id',
+          foreignField: 'OrderID',
+          as: 'orders',
+        },
+      },
+      {
+        $unwind: {
+          path: '$orders',
+        },
+      },
+      {
+        $group: {
+          _id: '$orders.EmployeeID',
+          'Amount, $': {
+            $sum: '$OrderPrice',
+          },
+        },
+      },
+      {
+        $sort: {
+          'Amount, $': -1,
+        },
+      },
+      {
+        $limit: 1,
+      },
+      {
+        $lookup: {
+          from: 'employees',
+          localField: '_id',
+          foreignField: 'EmployeeID',
+          as: 'employees',
+        },
+      },
+      {
+        $unwind: {
+          path: '$employees',
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          EmployeeID: '$_id',
+          'Employee Full Name': {
+            $concat: ['$employees.FirstName', ' ', '$employees.LastName'],
+          },
+          'Amount, $': 1,
+        },
+      },
+    ])
+    .toArray();
+  return result;
 }
 
 /**
