@@ -749,7 +749,7 @@ async function task_1_17(db) {
       {
         $sort: {
           AvgPrice: -1,
-          CategoryName: 1
+          CategoryName: 1,
         },
       },
     ])
@@ -769,7 +769,53 @@ async function task_1_17(db) {
  *       https://docs.mongodb.com/manual/reference/operator/aggregation/dateFromString/
  */
 async function task_1_18(db) {
-    throw new Error("Not implemented");
+  const result = await db
+    .collection('orders')
+    .aggregate([
+      {
+        $match: {
+          OrderDate: {
+            $regex: new RegExp('^1998'),
+          },
+        },
+      },
+      {
+        $project: {
+          date: {
+            $dateToString: {
+              date: {
+                $dateFromString: {
+                  dateString: '$OrderDate',
+                },
+              },
+              format: '%Y-%m-%d',
+            },
+          },
+        },
+      },
+      {
+        $group: {
+          _id: '$date',
+          'Total Number of Orders': {
+            $sum: 1,
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          'Order Date': '$_id',
+          'Total Number of Orders': 1,
+        },
+      },
+      {
+        $sort: {
+          'Order Date': 1,
+        },
+      },
+    ])
+    .toArray();
+  return result;
 }
 
 /**
