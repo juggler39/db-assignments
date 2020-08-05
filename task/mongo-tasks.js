@@ -1048,7 +1048,83 @@ async function task_1_21(db) {
  *       https://docs.mongodb.com/manual/reference/operator/aggregation/lookup/#join-conditions-and-uncorrelated-sub-queries
  */
 async function task_1_22(db) {
-    throw new Error("Not implemented");
+  const result = await db
+    .collection('orders')
+    .aggregate([
+      {
+        $lookup: {
+          from: 'order-details',
+          localField: 'OrderID',
+          foreignField: 'OrderID',
+          as: 'orders',
+        },
+      },
+      {
+        $unwind: {
+          path: '$orders',
+        },
+      },
+      {
+        $sort: {
+          'orders.UnitPrice': -1,
+        },
+      },
+      {
+        $group: {
+          _id: '$CustomerID',
+          ProductID: {
+            $first: '$orders.ProductID',
+          },
+          PricePerItem: {
+            $first: '$orders.UnitPrice',
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: 'customers',
+          localField: '_id',
+          foreignField: 'CustomerID',
+          as: 'customers',
+        },
+      },
+      {
+        $lookup: {
+          from: 'products',
+          localField: 'ProductID',
+          foreignField: 'ProductID',
+          as: 'products',
+        },
+      },
+      {
+        $unwind: {
+          path: '$customers',
+        },
+      },
+      {
+        $unwind: {
+          path: '$products',
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          CustomerID: '$_id',
+          ProductName: '$products.ProductName',
+          CompanyName: '$customers.CompanyName',
+          PricePerItem: 1,
+        },
+      },
+      {
+        $sort: {
+          PricePerItem: -1,
+          CompanyName: 1,
+          ProductName: 1,
+        },
+      },
+    ])
+    .toArray();
+  return result;
 }
 
 module.exports = {
