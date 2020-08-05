@@ -1130,7 +1130,7 @@ async function task_1_22(db) {
           CustomerID: 1,
           CompanyName: 1,
           ProductName: '$orders.ProductName',
-          PricePerItem: '$orders.UnitPrice',
+          PricePerItem: 1,
         },
       },
       {
