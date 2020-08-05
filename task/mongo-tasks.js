@@ -1049,13 +1049,73 @@ async function task_1_21(db) {
  */
 async function task_1_22(db) {
   const result = await db
-    .collection('orders')
+    .collection('customers')
     .aggregate([
       {
         $lookup: {
-          from: 'order-details',
-          localField: 'OrderID',
-          foreignField: 'OrderID',
+          from: 'orders',
+          let: {
+            customer_id: '$CustomerID',
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: ['$CustomerID', '$$customer_id'],
+                },
+              },
+            },
+            {
+              $lookup: {
+                from: 'order-details',
+                localField: 'OrderID',
+                foreignField: 'OrderID',
+                as: 'products',
+              },
+            },
+            {
+              $unwind: {
+                path: '$products',
+              },
+            },
+            {
+              $sort: {
+                'products.UnitPrice': -1,
+              },
+            },
+            {
+              $limit: 1,
+            },
+          ],
+          as: 'orders',
+        },
+      },
+      {
+        $project: {
+          CustomerID: 1,
+          CompanyName: 1,
+          orders: 1,
+        },
+      },
+      {
+        $unwind: {
+          path: '$orders',
+        },
+      },
+      {
+        $project: {
+          CustomerID: 1,
+          CompanyName: 1,
+          OrderID: '$orders.OrderID',
+          ProductID: '$orders.products.ProductID',
+          PricePerItem: '$orders.products.UnitPrice',
+        },
+      },
+      {
+        $lookup: {
+          from: 'products',
+          localField: 'ProductID',
+          foreignField: 'ProductID',
           as: 'orders',
         },
       },
@@ -1065,54 +1125,12 @@ async function task_1_22(db) {
         },
       },
       {
-        $sort: {
-          'orders.UnitPrice': -1,
-        },
-      },
-      {
-        $group: {
-          _id: '$CustomerID',
-          ProductID: {
-            $first: '$orders.ProductID',
-          },
-          PricePerItem: {
-            $first: '$orders.UnitPrice',
-          },
-        },
-      },
-      {
-        $lookup: {
-          from: 'customers',
-          localField: '_id',
-          foreignField: 'CustomerID',
-          as: 'customers',
-        },
-      },
-      {
-        $lookup: {
-          from: 'products',
-          localField: 'ProductID',
-          foreignField: 'ProductID',
-          as: 'products',
-        },
-      },
-      {
-        $unwind: {
-          path: '$customers',
-        },
-      },
-      {
-        $unwind: {
-          path: '$products',
-        },
-      },
-      {
         $project: {
           _id: 0,
-          CustomerID: '$_id',
-          ProductName: '$products.ProductName',
-          CompanyName: '$customers.CompanyName',
-          PricePerItem: 1,
+          CustomerID: 1,
+          CompanyName: 1,
+          ProductName: '$orders.ProductName',
+          PricePerItem: '$orders.UnitPrice',
         },
       },
       {
