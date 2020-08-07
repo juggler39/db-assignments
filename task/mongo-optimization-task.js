@@ -262,8 +262,6 @@ async function task_3_1(db) {
     return result;
 }
 
-
-
 module.exports = {
     before: before,
     task_3_1: task_3_1
