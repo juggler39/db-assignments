@@ -120,10 +120,10 @@ async function task_3_1(db) {
                           is_selected: true,
                           $or: [
                             {
-                              loop_instance: 50,
+                              loop_text: 'ADP',
                             },
                             {
-                              loop_text: 'ADP',
+                              loop_instance: 50,
                             },
                           ],
                         },
@@ -151,20 +151,20 @@ async function task_3_1(db) {
             $match: {
               $or: [
                 {
-                  'contacts.questions.answers.loopInstances.loop_instance': 50,
+                  'contacts.questions.answers.loopInstances.loop_text': 'ADP',
                 },
                 {
-                  'contacts.questions.answers.loopInstances.loop_text': 'ADP',
+                  'contacts.questions.answers.loopInstances.loop_instance': 50,
                 },
                 {
                   clientWinner: false,
                   'contacts.questions.category_id': 147,
                   $or: [
                     {
-                      'contacts.win_vendor.value':50,
+                      'contacts.win_vendor.name': 'ADP',
                     },
                     {
-                      'contacts.win_vendor.name': 'ADP',
+                      'contacts.win_vendor.value': 50,
                     },
                   ],
                 },
@@ -187,64 +187,76 @@ async function task_3_1(db) {
             },
           },
           {
-        $lookup:
-        {
-            from: 'clientCriteria',
-            let: { criteria: '$criteria_value' },
-            pipeline: [
+            $lookup: {
+              from: 'clientCriteria',
+              let: { criteria: '$criteria_value' },
+              pipeline: [
                 {
-                    $match: {
-                        'versions.initiativeId': ObjectId('58af4da0b310d92314627290')
-                    }
+                  $match: {
+                    'versions.initiativeId': ObjectId(
+                      '58af4da0b310d92314627290'
+                    ),
+                  },
                 },
                 {
-                    $project: {
-                        value: 1,
-                        label: 1,
-                        definition: 1,
-                        'versions.definition': 1,
-                    }
+                  $project: {
+                    value: 1,
+                    label: 1,
+                    definition: 1,
+                    'versions.definition': 1,
+                  },
                 },
                 {
-                    $match: {
-                        $expr: { $eq: ['$value', '$$criteria'] }
-                    }
+                  $match: {
+                    $expr: { $eq: ['$value', '$$criteria'] },
+                  },
                 },
-            ],
-            as: 'criteria'
-        }
-    }, {
-        $group: {
-            _id: '$contacts.questions.answers.primary_answer_value',
-            answer_value: {
-                '$first': '$contacts.questions.answers.primary_answer_value'
+              ],
+              as: 'criteria',
             },
-            answer_text: {
-                '$first': '$contacts.questions.answers.primary_answer_text'
+          },
+          {
+            $group: {
+              _id: '$contacts.questions.answers.primary_answer_value',
+              answer_value: {
+                $first: '$contacts.questions.answers.primary_answer_value',
+              },
+              answer_text: {
+                $first: '$contacts.questions.answers.primary_answer_text',
+              },
+              answers: {
+                $push: {
+                  c: '$contacts.id',
+                  question_category: '$contacts.questions.category_id',
+                  question_id: '$contacts.questions.id',
+                  ins:
+                    '$contacts.questions.answers.loopInstances.loop_instance',
+                  answer_value:
+                    '$contacts.questions.answers.primary_answer_value',
+                  selected:
+                    '$contacts.questions.answers.loopInstances.is_selected',
+                  value: '$criteria_value',
+                  text: { $arrayElemAt: ['$criteria.label', 0] },
+                  definition: {
+                    $ifNull: [
+                      {
+                        $arrayElemAt: [
+                          {
+                            $arrayElemAt: ['$criteria.versions.definition', 0],
+                          },
+                          0,
+                        ],
+                      },
+                      { $arrayElemAt: ['$criteria.definition', 0] },
+                    ],
+                  },
+                },
+              },
+              count: {
+                $sum: 1,
+              },
             },
-            answers: {
-                '$push': {
-                    'c': '$contacts.id',
-                    'question_category': '$contacts.questions.category_id',
-                    'question_id': '$contacts.questions.id',
-                    'ins': '$contacts.questions.answers.loopInstances.loop_instance',
-                    'answer_value':'$contacts.questions.answers.primary_answer_value',
-                    'selected': '$contacts.questions.answers.loopInstances.is_selected',
-                    'value': '$criteria_value',
-                    'text': { $arrayElemAt: ['$criteria.label', 0] },
-                    'definition': {
-                        '$ifNull': [
-                            { $arrayElemAt: [{ $arrayElemAt: ['$criteria.versions.definition', 0] }, 0] },
-                            { $arrayElemAt: ['$criteria.definition', 0] }
-                        ]
-                    }
-                }
-            },
-            'count': {
-                '$sum': 1
-            }
-        }
-    },
+          },
           {
             $unwind: '$answers',
           },
