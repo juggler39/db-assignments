@@ -163,13 +163,13 @@ return result[0];
 async function task_1_7(db) {
     let result = await db.query(`
     SELECT 
-        first.EmployeeID AS EmployeeId,
-        CONCAT(first.FirstName, ' ', first.LastName) AS FullName,
-        IFNULL(CONCAT(second.FirstName, ' ', second.LastName), '-') AS ReportsTo
+        e.EmployeeID AS EmployeeId,
+        CONCAT(e.FirstName, ' ', e.LastName) AS FullName,
+        IFNULL(CONCAT(e2.FirstName, ' ', e2.LastName), '-') AS ReportsTo
     FROM
-        Employees first
+        Employees e
             LEFT JOIN
-        Employees second ON first.ReportsTo = second.EmployeeID;
+        Employees e2 ON e.ReportsTo = e2.EmployeeID;
 `);
 return result[0];
 }
@@ -292,11 +292,21 @@ return result[0];
  */
 async function task_1_13(db) {
     let result = await db.query(`
-    SELECT 
-        COUNT(ProductID) AS TotalOfCurrentProducts,
-        SUM(Discontinued) AS TotalOfDiscontinuedProducts
-    FROM
-        Products;    
+    SELECT
+        (
+        SELECT
+            COUNT(*)
+        FROM
+            Products
+        WHERE
+            Discontinued = 1
+        ) AS TotalOfDiscontinuedProducts,
+        (
+        SELECT
+            COUNT(*)
+        FROM
+            Products
+        ) AS TotalOfCurrentProducts;
 `);
 return result[0];
 }
@@ -330,18 +340,18 @@ return result[0];
 async function task_1_15(db) {
     let result = await db.query(`
     SELECT 
-        SUM(MONTH(OrderDate) = 1) AS January,
-        SUM(MONTH(OrderDate) = 2) AS February,
-        SUM(MONTH(OrderDate) = 3) AS March,
-        SUM(MONTH(OrderDate) = 4) AS April,
-        SUM(MONTH(OrderDate) = 5) AS May,
-        SUM(MONTH(OrderDate) = 6) AS June,
-        SUM(MONTH(OrderDate) = 7) AS July,
-        SUM(MONTH(OrderDate) = 8) AS August,
-        SUM(MONTH(OrderDate) = 9) AS September,
-        SUM(MONTH(OrderDate) = 10) AS October,
-        SUM(MONTH(OrderDate) = 11) AS November,
-        SUM(MONTH(OrderDate) = 12) AS December
+        COUNT (IF (MONTH (OrderDate) = 1, 1, null)) as January,
+        COUNT (IF (MONTH (OrderDate) = 2, 1, null)) as February,
+        COUNT (IF (MONTH (OrderDate) = 3, 1, null)) as March,
+        COUNT (IF (MONTH (OrderDate) = 4, 1, null)) as April,
+        COUNT (IF (MONTH (OrderDate) = 5, 1, null)) as May,
+        COUNT (IF (MONTH (OrderDate) = 6, 1, null)) as June,
+        COUNT (IF (MONTH (OrderDate) = 7, 1, null)) as July,
+        COUNT (IF (MONTH (OrderDate) = 8, 1, null)) as August,
+        COUNT (IF (MONTH (OrderDate) = 9, 1, null)) as September,
+        COUNT (IF (MONTH (OrderDate) = 10, 1, null)) as October,
+        COUNT (IF (MONTH (OrderDate) = 11, 1, null)) as November,
+        COUNT (IF (MONTH (OrderDate) = 12, 1, null)) as December
     FROM
         Orders
     WHERE
